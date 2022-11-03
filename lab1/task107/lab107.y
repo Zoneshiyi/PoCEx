@@ -32,7 +32,7 @@ void yyerror(const char *s);
 %token SUB 
 %token MUL 
 %token DIV
-%token EXPO
+%right EXPO
 %token LP
 %token RP
 
@@ -41,13 +41,21 @@ calclist:
 	%empty
 	|calclist exp EOL {printf("=%.10g\n",$2);}
 	
-exp:term
-   	|exp ADD exp {$$=$1+$3;}
-	|exp SUB exp {$$=$1-$3;}
+exp:factor
+   	|exp ADD factor {$$=$1+$3;}
+	|exp SUB factor {$$=$1-$3;}
 	|error {}
 	;
-
-term:NUM
+factor:term
+	|factor MUL term {$$=$1*$3;}
+	|factor DIV term {$$=$1/$3;}
+	|term EXPO expo {$$=pow($1,$3);}
+	;
+expo:term
+	|term EXPO expo {$$=pow($1,$3);}
+	;
+term:NUM{$$=$1;}
+	|SUB NUM {$$=0-$2;}
 	;
 %%
 
