@@ -46,8 +46,14 @@ void flexout(std::string name,std::string value){
 "else" {{flexout("ELSE","else");}}
 "while" {{flexout("WHILE","while");}}
 
-[-]?[1-9][0-9]*|0 {{flexout("INT",yytext);}}
-[-]?(0\.[0-9]+|[1-9][0-9]*\.[0-9]+) {{flexout("FLOAT",yytext);}}
+[-]?[1-9][0-9]*|0 {{flexout("INT",yytext);}} //十进制整数
+[-]?0[1-7]+[0-7]* {{flexout("INT",yytext);}} //八进制整数
+[-]?0[1-9]+[0-9]* {printf("Error type A at Line %d: Illegal octal number '%s'\n",yylineno,yytext);} //非法八进制整数
+[-]?0x[0-9a-fA-F]* {{flexout("INT",yytext);}} //十六进制整数
+[-]?0[0-9a-zA-Z]* {printf("Error type A at Line %d: Illegal hexadecimal number '%s'\n",yylineno,yytext);} //非法十六进制整数
+
+[-]?(0\.[0-9]+|[1-9][0-9]*\.[0-9]+) {{flexout("FLOAT",yytext);}} //十进制浮点数
+[-]?1\.[0-9]+e[-]?[0-9]+ {{flexout("FLOAT",yytext);}} //十进制浮点数
 [a-zA-Z_][0-9a-zA-Z_]* {{flexout("ID",yytext);}}
 
 [\n]		{yycolumn=1;}
