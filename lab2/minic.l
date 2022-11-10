@@ -32,7 +32,7 @@ void flexout(std::string name,std::string value){
 "+=" {{flexout("PLUSASS","+=");}}
 "-" {{flexout("MINUS","-");}}
 "--" {{flexout("MINUSMINUS","--");}}
-"-=" {{flexout("MINUSASS","--");}}
+"-=" {{flexout("MINUSASS","-=");}}
 "*" {{flexout("STAR","*");}}
 "/" {{flexout("DIV","/");}}
 "&&" {{flexout("AND","&&");}}
