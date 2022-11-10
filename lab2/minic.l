@@ -28,7 +28,11 @@ void flexout(std::string name,std::string value){
 "=" {{flexout("ASSIGNOP","=");}}
 ">"|"<"|">="|"<="|"=="|"!=" {{flexout("RELOP",yytext);}}
 "+" {{flexout("PLUS","+");}}
+"++" {{flexout("PLUSPLUS","++");}}
+"+=" {{flexout("PLUSASS","+=");}}
 "-" {{flexout("MINUS","-");}}
+"--" {{flexout("MINUSMINUS","--");}}
+"-=" {{flexout("MINUSASS","--");}}
 "*" {{flexout("STAR","*");}}
 "/" {{flexout("DIV","/");}}
 "&&" {{flexout("AND","&&");}}
