@@ -2,22 +2,26 @@
 
 extern int spaces;
 
-void printspaces() {
+void printspaces()
+{
   for (int i = 0; i < spaces; ++i)
     std::cout << " ";
 }
-void printGrammerInfo(std::string nodeName, int line) {
+void printGrammerInfo(std::string nodeName, int line)
+{
   printspaces();
   std::cout << nodeName << " (" << line << ")" << std::endl;
 }
 
-int parseNIdentifier(NIdentifier &nIdentifier) {
+int parseNIdentifier(NIdentifier &nIdentifier)
+{
   printspaces();
   std::cout << "ID: " << nIdentifier.name << std::endl;
   return 0;
 }
 
-int NInteger::parse() {
+int NInteger::parse()
+{
   printGrammerInfo(getNodeName(), line);
   spaces += 2;
   printspaces();
@@ -26,15 +30,32 @@ int NInteger::parse() {
   spaces -= 2;
   return 0;
 }
-int NFloat::parse() {
-  
+/*Modified Start*/
+int NFloat::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+  spaces += 2;
+  printspaces();
+  std::cout << "FLOAT"
+            << ": " << value << std::endl;
+  spaces -= 2;
   return 0;
 }
-int NChar::parse() {
-  
+
+int NChar::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+  spaces += 2;
+  printspaces();
+  std::cout << "FLOAT"
+            << ": " << value << std::endl;
+  spaces -= 2;
   return 0;
 }
-int NIdentifier::parse() {
+/*Modified End*/
+
+int NIdentifier::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -44,53 +65,174 @@ int NIdentifier::parse() {
   spaces -= 2;
   return 0;
 }
-int NDotOperator::parse() {
-  
+int NDotOperator::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+  spaces += 2;
+  this->exp.parse();
+
+  printspaces();
+  std::cout << "DOT" << std::endl;
+
+  // id.parse();
+  parseNIdentifier(id);
+
+  spaces -= 2;
+
   return 0;
 }
-int NListOperator::parse() {
-  
+int NListOperator::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  lhs.parse();
+
+  printspaces();
+  std::cout << "LB" << std::endl;
+
+  rhs.parse();
+
+  printspaces();
+  std::cout << "RB" << std::endl;
+  spaces -= 2;
+
+  return 0;
   return 0;
 }
-int NArgs::parse() {
-  
+
+int NArgs::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  this->exp.parse();
+
+  if (nArgs)
+  {
+    printspaces();
+    std::cout << "COMMA" << std::endl;
+    nArgs->parse();
+  }
+
+  spaces -= 2;
+
   return 0;
 }
-int NMethodCall::parse() {
-  
+
+int NMethodCall::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  parseNIdentifier(id);
+
+  if (nargs)
+  {
+    printspaces();
+    std::cout << "LP" << std::endl;
+
+    nargs->parse();
+
+    printspaces();
+    std::cout << "RP" << std::endl;
+  }
+
+  spaces -= 2;
+
   return 0;
 }
-int NParenOperator::parse() {
-  
+int NParenOperator::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  this->exp.parse();
+
+  spaces -= 2;
   return 0;
 }
-int NSingleOperator::parse() {
-  
-  return 0;
-}
-int NBinaryOperator::parse() {
-  
-  return 0;
-}
-int NAssignment::parse() {
-  
-  return 0;
-}
-int NSpecifier::parse() {
+int NSingleOperator::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   printspaces();
-  std::cout << "TYPE: " << type << std::endl;
+  std::cout << name << std::endl;
+
+  hs.parse();
+
+  spaces -= 2;
+
+  return 0;
+}
+int NBinaryOperator::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  lhs.parse();
+
+  printspaces();
+  std::cout << name << std::endl;
+
+  rhs.parse();
+
+  spaces -= 2;
+
+  return 0;
+}
+
+int NAssignment::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  lhs.parse();
+
+  printspaces();
+  std::cout << name << std::endl;
+
+  rhs.parse();
+
+  spaces -= 2;
+
+  return 0;
+}
+
+/*Modified Start*/
+int NSpecifier::parse()
+{
+  // printf("1 /n");
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+
+  if (nStructSpecifier)
+  {
+    // printf("2 /n");
+    nStructSpecifier->parse();
+  }
+  else
+  {
+    printspaces();
+    std::cout << "TYPE: " << type << std::endl;
+  }
+
   spaces -= 2;
   return 0;
 }
-int NVarDec::parse() {
+/*Modified End*/
+
+int NVarDec::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
-  if (v.size()) {
+  if (v.size())
+  {
     spaces += 2;
-    for (int i = 0; i < v.size(); ++i) {
+    for (int i = 0; i < v.size(); ++i)
+    {
       printGrammerInfo(getNodeName(), line);
 
       spaces += 2;
@@ -98,7 +240,8 @@ int NVarDec::parse() {
     parseNIdentifier(Id);
     // Id.parse();
     spaces -= 2;
-    for (int i = 0; i < v.size(); ++i) {
+    for (int i = 0; i < v.size(); ++i)
+    {
       printspaces();
       std::cout << "LB" << std::endl;
       printspaces();
@@ -107,7 +250,9 @@ int NVarDec::parse() {
       std::cout << "RB" << std::endl;
       spaces -= 2;
     }
-  } else {
+  }
+  else
+  {
     spaces += 2;
     parseNIdentifier(Id);
     // Id.parse();
@@ -115,15 +260,32 @@ int NVarDec::parse() {
   }
   return 0;
 }
-int NParamDec::parse() {
-  
+int NParamDec::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+  spaces += 2;
+  nSpecifier.parse();
+  varDec.parse();
+
+  spaces -= 2;
+
   return 0;
 }
-int NVarList::parse() {
-  
+int NVarList::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+  spaces += 2;
+
+  nParamDec.parse();
+  if (nVarList)
+    nVarList->parse();
+
+  spaces -= 2;
+
   return 0;
 }
-int NFunDec::parse() {
+int NFunDec::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -138,12 +300,14 @@ int NFunDec::parse() {
   spaces -= 2;
   return 0;
 }
-int NDec::parse() {
+int NDec::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   vardec.parse();
-  if (exp) {
+  if (exp)
+  {
     printspaces();
     std::cout << "ASSIGNOP" << std::endl;
     exp->parse();
@@ -151,12 +315,14 @@ int NDec::parse() {
   spaces -= 2;
   return 0;
 }
-int NDecList::parse() {
+int NDecList::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   dec.parse();
-  if (nDecList) {
+  if (nDecList)
+  {
     printspaces();
     std::cout << "COMMA" << std::endl;
     nDecList->parse();
@@ -164,7 +330,8 @@ int NDecList::parse() {
   spaces -= 2;
   return 0;
 }
-int NDef::parse() {
+int NDef::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -176,22 +343,46 @@ int NDef::parse() {
   spaces -= 2;
   return 0;
 }
-int NDefList::parse() {
+int NDefList::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   nDef.parse();
-  if (nDefList) {
+  if (nDefList)
+  {
     nDefList->parse();
   }
   spaces -= 2;
   return 0;
 }
-int NStructSpecifier::parse() {
-  
+int NStructSpecifier::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  printspaces();
+  std::cout << "STRUCT" << std::endl;
+
+  if (tag)
+    tag->parse();
+
+  if (deflist)
+  {
+    printspaces();
+    std::cout << "LC" << std::endl;
+
+    deflist->parse();
+
+    printspaces();
+    std::cout << "RC" << std::endl;
+  }
+
+  spaces -= 2;
   return 0;
 }
-int NStmtList::parse() {
+int NStmtList::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -202,7 +393,8 @@ int NStmtList::parse() {
   return 0;
 }
 
-int NCompSt::parse() {
+int NCompSt::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -217,62 +409,162 @@ int NCompSt::parse() {
   spaces -= 2;
   return 0;
 }
-int NExpStmt::parse() {
+int NExpStmt::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   this->exp.parse();
+
   printspaces();
   std::cout << "SEMI" << std::endl;
   spaces -= 2;
   return 0;
 }
-int NCompStStmt::parse() {
-  
+int NCompStStmt::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  compst.parse();
+  spaces -= 2;
   return 0;
 }
-int NRetutnStmt::parse() {
+int NRetutnStmt::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   printspaces();
   std::cout << "RETURN" << std::endl;
+
   this->exp.parse();
+  // std::cout<< "return XXXX" << std::endl;
+
   printspaces();
   std::cout << "SEMI" << std::endl;
   spaces -= 2;
   return 0;
 }
-int NIfStmt::parse() {
-  
+int NIfStmt::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  printspaces();
+  std::cout << "IF" << std::endl;
+  printspaces();
+  std::cout << "LP" << std::endl;
+
+  this->exp.parse();
+
+  printspaces();
+  std::cout << "RP" << std::endl;
+
+  stmt.parse();
+
+  spaces -= 2;
   return 0;
 }
-int NIfElseStmt::parse() {
-  
+int NIfElseStmt::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+
+  printspaces();
+  std::cout << "IF" << std::endl;
+
+  printspaces();
+  std::cout << "LP" << std::endl;
+
+  this->exp.parse();
+
+  printspaces();
+  std::cout << "RP" << std::endl;
+
+  stmt.parse();
+
+  printspaces();
+  std::cout << "ELSE" << std::endl;
+
+  stmt_else.parse();
+
+  spaces -= 2;
   return 0;
 }
-int NWhileStmt::parse() {
+int NWhileStmt::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+
+  printspaces();
+  std::cout << "WHILE" << std::endl;
+
+  printspaces();
+  std::cout << "LP" << std::endl;
+
+  this->exp.parse();
+
+  printspaces();
+  std::cout << "RP" << std::endl;
+
+  stmt.parse();
+
+  spaces -= 2;
   return 0;
 }
-int NBreakStmt::parse() {
-  
+int NBreakStmt::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  printspaces();
+  std::cout << "BREAK" << std::endl;
+
+  printspaces();
+  std::cout << "SEMI" << std::endl;
+
+  spaces -= 2;
   return 0;
 }
-int NExtDecList::parse() {
+int NExtDecList::parse()
+{
+  printGrammerInfo(getNodeName(), line);
+
+  spaces += 2;
+  nVarDec.parse();
+
+  if (nExtDecList)
+  {
+    printspaces();
+    std::cout << "COMMA" << std::endl;
+
+    nExtDecList->parse();
+  }
+
+  spaces -= 2;
   return 0;
 }
-int NExtDef::parse() {
+int NExtDef::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
   specifier.parse();
-  if (fundec) {
+  if (fundec)
+  {
     fundec->parse();
-    if (compst) {
+    if (compst)
+    {
       compst->parse();
     }
-  } else {
-    if (nextdeclist) {
+  }
+  else
+  {
+    if (nextdeclist)
+    {
       nextdeclist->parse();
     }
     printspaces();
@@ -282,7 +574,8 @@ int NExtDef::parse() {
   spaces -= 2;
   return 0;
 }
-int NExtDefList::parse() {
+int NExtDefList::parse()
+{
   printGrammerInfo(getNodeName(), line);
 
   spaces += 2;
@@ -292,7 +585,8 @@ int NExtDefList::parse() {
   spaces -= 2;
   return 0;
 }
-int NProgram::parse() {
+int NProgram::parse()
+{
   printGrammerInfo("Program", line);
   spaces += 2;
   if (nextdeflist)

@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <typeinfo>
+
 #include <algorithm>
 #include <assert.h>
 #include <cctype>
@@ -14,7 +16,6 @@
 #include <map>
 #include <memory>
 
-
 extern int spaces;
 void printspaces();
 void printGrammerInfo(std::string, int);
@@ -23,7 +24,8 @@ void printSemanticError(int type, int line, std::string info);
 class NIdentifier;
 int parseNIdentifier(NIdentifier &nIdentifier);
 
-class Node {
+class Node
+{
 public:
   int line;
   std::string getNodeName() { return "node"; }
@@ -32,7 +34,8 @@ public:
   virtual int handle() { return 0; }
 };
 /*Expressions*/
-class NExpression : public Node {
+class NExpression : public Node
+{
 public:
   std::string name;
   std::string getNodeName() { return "Exp"; }
@@ -40,87 +43,104 @@ public:
   virtual int handle() { return 0; }
 };
 
-class NInteger : public NExpression {
+class NInteger : public NExpression
+{
 public:
   int value;
   NInteger(int value) : value(value) {}
   int parse();
   int handle() { return 0; }
-
 };
 
-class NFloat : public NExpression {
+class NFloat : public NExpression
+{
 public:
   double value;
   NFloat(double value) : value(value) {}
   int parse();
-
 };
 
-class NChar : public NExpression {
+class NChar : public NExpression
+{
 public:
   char value;
   NChar(char value) : value(value) {}
   int parse();
-
 };
 
-class NIdentifier : public NExpression {
+/*Modified Start*/
+class NIdentifier : public NExpression
+{
 public:
   // std::string name;
   NIdentifier(const std::string &name) { this->name = name; }
+
+  std::string tag = "Exp";
+  NIdentifier(const std::string &name, const std::string &tag)
+  {
+    this->name = name;
+    this->tag = tag;
+  }
+
+  std::string getNodeName()
+  {
+    return tag;
+  }
+
   int parse();
-
 };
+/*Modified End*/
 
-class NDotOperator : public NExpression {
+class NDotOperator : public NExpression
+{
 public:
   NExpression &exp;
   NIdentifier &id;
   NDotOperator(NExpression &exp, NIdentifier &id) : exp(exp), id(id) {}
-
+  // std::string name = "DOT";
   int parse();
 };
 
-class NListOperator : public NExpression {
+class NListOperator : public NExpression
+{
 public:
   NExpression &lhs;
   NExpression &rhs;
-  NListOperator(NExpression &exp, NExpression &rhs) : lhs(lhs), rhs(rhs) {}
-
+  NListOperator(NExpression &lhs, NExpression &rhs) : lhs(lhs), rhs(rhs) {}
   int parse();
 };
 
-class NArgs : public NExpression {
+class NArgs : public NExpression
+{
 public:
   NExpression &exp;
   NArgs *nArgs = nullptr;
   NArgs(NExpression &exp, NArgs *nArgs) : exp(exp), nArgs(nArgs) {}
   std::string getNodeName() { return "Args"; }
   int parse();
-
 };
 
 // int parseNIdentifier(NIdentifier &nIdentifier);
-class NMethodCall : public NExpression {
+class NMethodCall : public NExpression
+{
 public:
   NIdentifier &id;
   NArgs *nargs = nullptr;
   NMethodCall(NIdentifier &id, NArgs *nargs) : id(id), nargs(nargs) {}
   NMethodCall(NIdentifier &id) : id(id) {}
   int parse();
-
 };
 
-class NParenOperator : public NExpression {
+class NParenOperator : public NExpression
+{
 public:
   NExpression &exp;
   NParenOperator(NExpression &exp) : exp(exp) {}
   int parse();
-
 };
 
-class NSingleOperator : public NExpression {
+class NSingleOperator : public NExpression
+{
 public:
   int op;
   std::string name;
@@ -129,10 +149,10 @@ public:
   NSingleOperator(std::string name, int op, NExpression &hs)
       : name(name), op(op), hs(hs) {}
   int parse();
-
 };
 
-class NBinaryOperator : public NExpression {
+class NBinaryOperator : public NExpression
+{
 public:
   int op;
   std::string name;
@@ -143,11 +163,10 @@ public:
   NBinaryOperator(std::string name, NExpression &lhs, int op, NExpression &rhs)
       : name(name), lhs(lhs), rhs(rhs), op(op) {}
   int parse();
-
-
 };
 
-class NAssignment : public NExpression {
+class NAssignment : public NExpression
+{
 public:
   int op;
   std::string name;
@@ -159,33 +178,38 @@ public:
       : name(name), lhs(lhs), op(op), rhs(rhs) {}
   int parse();
   int handle() { return 0; }
-
 };
 
 /*Specifiers*/
-class NSpecifier : public Node {
+
+/*Modified Start*/
+class NStructSpecifier;
+class NSpecifier : public Node
+{
 public:
   std::string type;
+  NStructSpecifier *nStructSpecifier = nullptr;
   NSpecifier() {}
   NSpecifier(std::string &type) : type(type) {}
+  NSpecifier(NStructSpecifier *nStructSpecifier) : nStructSpecifier(nStructSpecifier) {}
   std::string getNodeName() { return "Specifier"; }
   int parse();
-
-
 };
+/*Modified End*/
 
 /*Declarators*/
-class NVarDec : public Node {
+class NVarDec : public Node
+{
 public:
   NIdentifier &Id;
   std::vector<int> v;
   NVarDec(NIdentifier &Id) : Id(Id) {}
   std::string getNodeName() { return "VarDec"; }
   int parse();
-
 };
 
-class NParamDec : public Node {
+class NParamDec : public Node
+{
 public:
   NSpecifier &nSpecifier;
   NVarDec &varDec;
@@ -193,10 +217,10 @@ public:
       : nSpecifier(nSpecifier), varDec(varDec) {}
   std::string getNodeName() { return "ParamDec"; }
   int parse();
-
 };
 
-class NVarList : public Node {
+class NVarList : public Node
+{
 public:
   NParamDec &nParamDec;
   NVarList *nVarList = nullptr;
@@ -204,10 +228,10 @@ public:
       : nParamDec(nParamDec), nVarList(nVarList) {}
   std::string getNodeName() { return "VarList"; }
   int parse();
-
 };
 
-class NFunDec : public Node {
+class NFunDec : public Node
+{
 public:
   NIdentifier &Id;
   NVarList *arguments = nullptr;
@@ -219,7 +243,8 @@ public:
 
 /*Local Definitions*/
 
-class NDec : public Node {
+class NDec : public Node
+{
 public:
   NVarDec &vardec;
   NExpression *exp = nullptr;
@@ -229,7 +254,8 @@ public:
   int parse();
 };
 
-class NDecList : public Node {
+class NDecList : public Node
+{
 public:
   NDec &dec;
   NDecList *nDecList = nullptr;
@@ -238,7 +264,8 @@ public:
   int parse();
 };
 
-class NDef : public Node {
+class NDef : public Node
+{
 public:
   NSpecifier &nSpecifier;
   NDecList *nDecList = nullptr;
@@ -246,41 +273,50 @@ public:
       : nSpecifier(nSpecifier), nDecList(nDecList) {}
   std::string getNodeName() { return "Def"; }
   int parse();
-
 };
 
-class NDefList : public Node {
+class NDefList : public Node
+{
 public:
   NDef &nDef;
   NDefList *nDefList = nullptr;
   NDefList(NDef &nDef, NDefList *nDefList) : nDef(nDef), nDefList(nDefList) {}
   std::string getNodeName() { return "DefList"; }
   int parse();
-
 };
 
 /*Specifiers*/
-class NStructSpecifier : public NSpecifier {
+
+/*Modified Start*/
+class NStructSpecifier : public NSpecifier
+{
 public:
   NIdentifier *tag = nullptr;
   NDefList *deflist = nullptr;
   NStructSpecifier(NIdentifier *tag) : tag(tag) {}
   NStructSpecifier(NIdentifier *tag, NDefList *deflist)
       : tag(tag), deflist(deflist) {}
+  std::string getNodeName() { return "StructSpecifier"; }
   int parse();
 };
+/*Modified End*/
+
 /*Statements*/
 
-class NStatement : public Node {};
+class NStatement : public Node
+{
+};
 
-class NStmt : public NStatement {
+class NStmt : public NStatement
+{
 public:
   int type;
   std::string getNodeName() { return "Stmt"; }
   virtual int parse() { return 0; }
 };
 
-class NStmtList : public Node {
+class NStmtList : public Node
+{
 public:
   NStmt &nStmt;
   NStmtList *nStmtList = nullptr;
@@ -288,10 +324,10 @@ public:
       : nStmt(nStmt), nStmtList(nStmtList) {}
   std::string getNodeName() { return "StmtList"; }
   int parse();
-
 };
 
-class NCompSt : public NStatement {
+class NCompSt : public NStatement
+{
 public:
   NDefList *ndeflist = nullptr;
   NStmtList *nstmtlist = nullptr;
@@ -299,44 +335,45 @@ public:
       : ndeflist(ndeflist), nstmtlist(nstmtlist) {}
   std::string getNodeName() { return "CompSt"; }
   int parse();
-
 };
 
-class NExpStmt : public NStmt {
+class NExpStmt : public NStmt
+{
 public:
   NExpression &exp;
   NExpStmt(NExpression &exp) : exp(exp) {}
   // std::string getNodeName() { return "NExpStmt"; }
   int parse();
-
 };
 
-class NCompStStmt : public NStmt {
+class NCompStStmt : public NStmt
+{
 public:
   NCompSt &compst;
   NCompStStmt(NCompSt &compst) : compst(compst) {}
   int parse();
-
 };
 
-class NRetutnStmt : public NStmt {
+class NRetutnStmt : public NStmt
+{
 public:
   NExpression &exp;
   NRetutnStmt(NExpression &exp) : exp(exp) {}
-  int parse();
 
+  int parse();
 };
 
-class NIfStmt : public NStmt {
+class NIfStmt : public NStmt
+{
 public:
   NExpression &exp;
   NStmt &stmt;
   NIfStmt(NExpression &exp, NStmt &stmt) : exp(exp), stmt(stmt) {}
   int parse();
-
 };
 
-class NIfElseStmt : public NStmt {
+class NIfElseStmt : public NStmt
+{
 public:
   NExpression &exp;
   NStmt &stmt;
@@ -344,28 +381,28 @@ public:
   NIfElseStmt(NExpression &exp, NStmt &stmt, NStmt &stmt_else)
       : exp(exp), stmt(stmt), stmt_else(stmt_else) {}
   int parse();
-
 };
 
-class NWhileStmt : public NStmt {
+class NWhileStmt : public NStmt
+{
 public:
   NExpression &exp;
   NStmt &stmt;
   NWhileStmt(NExpression &exp, NStmt &stmt) : exp(exp), stmt(stmt) {}
   int parse();
-
 };
 
-class NBreakStmt : public NStmt {
+class NBreakStmt : public NStmt
+{
 public:
   NBreakStmt() {}
   int parse();
-
 };
 
 /*High-level Definitions*/
 
-class NExtDecList : public Node {
+class NExtDecList : public Node
+{
 public:
   NVarDec &nVarDec;
   NExtDecList *nExtDecList = nullptr;
@@ -375,7 +412,8 @@ public:
   int parse();
 };
 
-class NExtDef : public Node {
+class NExtDef : public Node
+{
 public:
   NSpecifier &specifier;
   NExtDecList *nextdeclist = nullptr;
@@ -391,24 +429,25 @@ public:
   int parse();
 };
 
-class NExtDefVarDec : public NExtDef {
+class NExtDefVarDec : public NExtDef
+{
 public:
   // NExtDefVarDec(NSpecifier &specifier) : NExtDef(specifier) {}
   NExtDefVarDec(NSpecifier &specifier, NExtDecList *nextdeclist)
       : NExtDef(specifier, nextdeclist) {}
   std::string getNodeName() { return "ExtDefVarDec"; }
-
 };
 
-class NExtDefFunDec : public NExtDef {
+class NExtDefFunDec : public NExtDef
+{
 public:
   NExtDefFunDec(NSpecifier &specifier, NFunDec *fundec, NCompSt *compst)
       : NExtDef(specifier, fundec, compst) {}
   std::string getNodeName() { return "ExtDefFunDec"; }
-
 };
 
-class NExtDefList : public Node {
+class NExtDefList : public Node
+{
 public:
   NExtDef &nExtDef;
   NExtDefList *nExtDefList = nullptr;
@@ -416,15 +455,14 @@ public:
       : nExtDef(nExtDef), nExtDefList(nExtDefList) {}
   std::string getNodeName() { return "ExtDefList"; }
   int parse();
-
 };
 
-class NProgram : public Node {
+class NProgram : public Node
+{
 public:
   NExtDefList *nextdeflist;
   NProgram(NExtDefList *nextdeflist) : nextdeflist(nextdeflist) {}
   int parse();
-
 };
 
 #endif
