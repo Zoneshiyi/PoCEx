@@ -47,7 +47,8 @@ std::map<std::string, AllocaInst *> curNamedValues;
 
 BasicBlock *continueBasicBlock = nullptr;
 
-void InitializeModuleAndPassManager() {
+void InitializeModuleAndPassManager()
+{
   // Open a new module.
   theContext = std::make_unique<LLVMContext>();
   theModule = std::make_unique<Module>("test", *theContext);
@@ -61,20 +62,21 @@ void InitializeModuleAndPassManager() {
   theFPM = std::make_unique<legacy::FunctionPassManager>(theModule.get());
 
   // Promote allocas to registers.
-  //theFPM->add(createPromoteMemoryToRegisterPass());
+  // theFPM->add(createPromoteMemoryToRegisterPass());
   // Do simple "peephole" optimizations and bit-twiddling optzns.
-  //theFPM->add(createInstructionCombiningPass());
+  // theFPM->add(createInstructionCombiningPass());
   // Reassociate expressions.
-  //theFPM->add(createReassociatePass());
+  // theFPM->add(createReassociatePass());
   // Eliminate Common SubExpressions.
-  //theFPM->add(createGVNPass());
+  // theFPM->add(createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
-  //theFPM->add(createCFGSimplificationPass());
+  // theFPM->add(createCFGSimplificationPass());
 
   theFPM->doInitialization();
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   // Init
   InitializeModuleAndPassManager();
 
@@ -95,8 +97,79 @@ int main(int argc, char *argv[]) {
                                        "getchar", theModule.get());
   //根据输入的单字符，判断，如果是'a'，则输出'Y'，否则输出'N'。
   //设置返回类型
-  //begin
-  
+  // begin
+
+  Type *retType = Type::getInt32Ty(*theContext);
+  std::vector<Type *> argsTypes;     //参数类型
+  std::vector<std::string> argNames; //参数名
+  //无参，所以不push内容
+  //得到函数类型
+  FunctionType *ft = FunctionType::get(retType, argsTypes, false);
+  //创建函数
+  Function *f =
+      Function::Create(ft, Function::ExternalLinkage, "main", theModule.get());
+  //为函数的参数设置名字
+  unsigned idx = 0;
+  for (auto &arg : f->args())
+  {
+    arg.setName(argNames[idx++]);
+  }
+  //创建第一个基本块 函数入口
+  BasicBlock *bb = BasicBlock::Create(*theContext, "entry", f);
+  builder->SetInsertPoint(bb);
+  // 为参数变量申请空间
+  // 无参
+  // 创建第一个变量 a
+  AllocaInst *alloca_a =
+      builder->CreateAlloca(Type::getInt32Ty(*theContext), nullptr, "a");
+  //得到常量0
+  Value *const_0 = ConstantInt::get(*theContext, APInt(32, 0, true));
+  //初始化
+  builder->CreateStore(const_0, alloca_a);
+  Function *calleeF = theModule->getFunction("getchar");
+  //处理参数
+  std::vector<Value *> argsV;
+  Value *callgetchar = builder->CreateCall(calleeF, argsV, "callgetchar");
+  builder->CreateStore(callgetchar, alloca_a);
+  // if 结构
+  //先计算条件
+  //加载a
+  Value *load_a2 =
+      builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  //得到常量'a'
+  Value *const_a = ConstantInt::get(*theContext, APInt(32, 'a', true));
+  //比较
+  Value *compare_a_a =
+      builder->CreateICmpEQ(load_a2, const_a, "comp"); // signed greater than
+  //创建条件为真和假应跳转的两个基本块
+  BasicBlock *thenb = BasicBlock::Create(*theContext, "then", f);
+  BasicBlock *elseb = BasicBlock::Create(*theContext, "else");
+  BasicBlock *ifcontb = BasicBlock::Create(*theContext, "ifcont");
+  //根据condVal值跳转 真为thenb 否则为elseb
+  builder->CreateCondBr(compare_a_a, thenb, elseb);
+  //进入thenb基本块
+  builder->SetInsertPoint(thenb);
+  //得到常量'Y'
+  Value *const_Y = ConstantInt::get(*theContext, APInt(32, 'Y', true));
+  argsV.clear();
+  argsV.push_back(const_Y);
+  Function *calleeP = theModule->getFunction("putchar");
+  builder->CreateCall(calleeP, argsV, "callputchar");
+  builder->CreateBr(ifcontb);
+  //将创建的elseb 基本块 插入
+  f->getBasicBlockList().push_back(elseb);
+  //进入 elseb
+  builder->SetInsertPoint(elseb);
+  //得到常量'N'
+  Value *const_N = ConstantInt::get(*theContext, APInt(32, 'N', true));
+  argsV.clear();
+  argsV.push_back(const_N);
+  builder->CreateCall(calleeP, argsV, "callputchar");
+  builder->CreateBr(ifcontb);
+  //将创建的ifcontb 基本块 插入
+  f->getBasicBlockList().push_back(ifcontb);
+  //进入 infcontb
+  builder->SetInsertPoint(ifcontb);
 
   // end
   //设置返回值

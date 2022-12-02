@@ -1,4 +1,4 @@
- #include <iostream>
+#include <iostream>
 
 #include <string>
 #include <vector>
@@ -47,7 +47,8 @@ std::map<std::string, AllocaInst *> curNamedValues;
 
 BasicBlock *continueBasicBlock = nullptr;
 
-void InitializeModuleAndPassManager() {
+void InitializeModuleAndPassManager()
+{
   // Open a new module.
   theContext = std::make_unique<LLVMContext>();
   theModule = std::make_unique<Module>("test", *theContext);
@@ -61,20 +62,21 @@ void InitializeModuleAndPassManager() {
   theFPM = std::make_unique<legacy::FunctionPassManager>(theModule.get());
 
   // Promote allocas to registers.
-  //theFPM->add(createPromoteMemoryToRegisterPass());
+  // theFPM->add(createPromoteMemoryToRegisterPass());
   // Do simple "peephole" optimizations and bit-twiddling optzns.
-  //theFPM->add(createInstructionCombiningPass());
+  // theFPM->add(createInstructionCombiningPass());
   // Reassociate expressions.
-  //theFPM->add(createReassociatePass());
+  // theFPM->add(createReassociatePass());
   // Eliminate Common SubExpressions.
-  //theFPM->add(createGVNPass());
+  // theFPM->add(createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
-  //theFPM->add(createCFGSimplificationPass());
+  // theFPM->add(createCFGSimplificationPass());
 
   theFPM->doInitialization();
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   // Init
   InitializeModuleAndPassManager();
 
@@ -99,7 +101,8 @@ int main(int argc, char *argv[]) {
       Function::Create(ft, Function::ExternalLinkage, "main", theModule.get());
   //为函数的参数设置名字
   unsigned idx = 0;
-  for (auto &arg : f->args()) {
+  for (auto &arg : f->args())
+  {
     arg.setName(argNames[idx++]);
   }
   //创建第一个基本块 函数入口
@@ -123,9 +126,54 @@ int main(int argc, char *argv[]) {
   argsV.push_back(load_a4);
   //判断参数是否符合 自行处理
   Value *callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
-  // begin
-  
-  // end
+
+  // ***************begin***************
+
+  argsV.clear();
+  // a=U
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'U', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  argsV.clear();
+  // a=S
+
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'S', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  argsV.clear();
+  // a=T
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'T', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  argsV.clear();
+  // a=C
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'C', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  argsV.clear();
+  // a=S
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'S', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  argsV.clear();
+  // a=E
+  builder->CreateStore(ConstantInt::get(*theContext, APInt(32, 'E', true)), alloca_a);
+  load_a4 = builder->CreateLoad(alloca_a->getAllocatedType(), alloca_a, "a");
+  argsV.push_back(load_a4);
+  callputchar = builder->CreateCall(calleeF, argsV, "callputchar");
+
+  // ***************end***************
+
   //设置返回值
   builder->CreateRet(const_1);
   verifyFunction(*f);
