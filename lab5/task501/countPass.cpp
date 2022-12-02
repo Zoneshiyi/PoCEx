@@ -4,16 +4,19 @@
 
 using namespace llvm;
 
-namespace {
-struct CountPass : public FunctionPass {
-  static char ID;
-  CountPass() : FunctionPass(ID) {}
+namespace
+{
+  struct CountPass : public FunctionPass
+  {
+    static char ID;
+    CountPass() : FunctionPass(ID) {}
 
-  bool runOnFunction(Function &F) override {
-    outs().write_escaped(F.getName()) << '\n';
-    return false;
-  }
-};
+    bool runOnFunction(Function &F) override
+    {
+      outs().write_escaped(F.getName()) << ':' << F.getBasicBlockList().size() << '\n';
+      return false;
+    }
+  };
 } // namespace
 
 char CountPass::ID = 0;
