@@ -23,7 +23,7 @@ extern int yylex(void);
 %}
 
 %union {
-		NExtDefFunDec  *nExtDefFunDec;
+        NExtDefFunDec  *nExtDefFunDec;
         NExtDefList *nExtDefList;
         NExtDef *nExtDef;
         NSpecifier *nSpecifier;
@@ -45,11 +45,11 @@ extern int yylex(void);
         NStructSpecifier *nStructSpecifier;
 
         std::string *text;
-		int		type_int;
-        int		line;
-		float	type_float;
-		int		type_char;
-		char	type_id[32];
+        int     type_int;
+        int     line;
+        float   type_float;
+        int     type_char;
+        char    type_id[32];
 }
 //union的默认结构体类型为YYSTYPE，相当于自己把YYSTYPE重新定义为union类型。所以相应的yylval也变为union类型。
 //这个union类型-d选项编译时会放在头文件中
@@ -105,16 +105,20 @@ extern int yylex(void);
 /*High-level Definitions*/
 program: ExtDefList {p=new NProgram($1);if($1) p->line=$1->line;} /*显示语法树*/
         ;
+
 ExtDefList: {  $$=nullptr;}
         | ExtDef ExtDefList {$$=new NExtDefList(*$1,$2);$$->line=$1->line;}
         ;
+
 ExtDef: Specifier ExtDecList SEMI {$$=new NExtDef(*$1,$2);$$->line=$1->line;}
         | Specifier SEMI {$$=new NExtDef(*$1);$$->line=$1->line;} 
         | Specifier FunDec CompSt {$$=new NExtDef(*$1,$2,$3);$$->line=$1->line;}
         ;
+
 ExtDecList: VarDec {$$=new NExtDecList(*$1,nullptr);$$->line=$1->line;}
         | VarDec COMMA ExtDecList {$$=new NExtDecList(*$1,$3);$$->line=$1->line;}
         ;
+
 
 /*Specifiers*/
 Specifier: TYPE {$$=new NSpecifier(*(new std::string($1)));$$->line=yylineno; }   
@@ -124,34 +128,45 @@ Specifier: TYPE {$$=new NSpecifier(*(new std::string($1)));$$->line=yylineno; }
 StructSpecifier: STRUCT OptTag LC DefList RC {$$=new NStructSpecifier($2,$4); $$->line=$2->line; }   
         | STRUCT Tag {$$=new NStructSpecifier($2);$$->line=$2->line;}   
         ;
+
+
 /*Modified:lineno is wrong. Add a para*/
 OptTag: ID {$$=new NIdentifier(*(new std::string($1)),"OptTag");$$->line=yylineno-1;}   
         | {$$=nullptr;}   
         ;
-        
+
+
+
 /*Modified: Add a para*/
 Tag: ID {$$=new NIdentifier(*(new std::string($1)),"Tag");$$->line=yylineno;}   
         ;
+
 
 /*Declarators*/
 VarDec:  ID {NIdentifier *nIdentifier = new NIdentifier(*(new std::string($1)));$$=new NVarDec(*nIdentifier);$$->line=yylineno;}   //ID结点，标识符符号串存放结点的type_id
         | VarDec LB INT RB {$$=$1;$$->v.push_back($3);}
         ;
+
 FunDec: ID LP VarList RP {$$=new NFunDec(*(new NIdentifier(*(new std::string($1)))),$3); $$->line=yylineno;}
         | ID LP RP {$$=new NFunDec(*(new NIdentifier(*(new std::string($1)))),nullptr);$$->line=yylineno;}
         ;
+
 VarList: ParamDec {$$=new NVarList(*$1,nullptr);$$->line=$1->line;}
         | ParamDec COMMA VarList {$$=new NVarList(*$1,$3); $$->line=$1->line;}
         ;
+
 ParamDec: Specifier VarDec {$$=new NParamDec(*$1,*$2); $$->line=$1->line;}
         ;
+
 
 /*Statements*/
 CompSt:   LC DefList StmtList RC {$$=new NCompSt($2,$3); $$->line=$1;}
         ;
+
 StmtList: {$$=nullptr;}  
         | Stmt StmtList  {$$=new NStmtList(*$1,$2); $$->line=$1->line;}
         ;
+
 Stmt:     Exp SEMI {$$=new NExpStmt(*$1);$$->line=$1->line;}
         | CompSt {$$=new NCompStStmt(*$1);$$->line=$1->line;}      //复合语句结点直接最为语句结点，不再生成新的结点
         | RETURN Exp SEMI {$$=new NRetutnStmt(*$2);$$->line=$2->line;}
@@ -161,19 +176,23 @@ Stmt:     Exp SEMI {$$=new NExpStmt(*$1);$$->line=$1->line;}
         | BREAK SEMI {$$=new NBreakStmt();$$->line=yylineno;}
         ;
 
+
 /*Local Definitions*/
 DefList: {$$=nullptr;}
         | Def DefList {$$=new NDefList(*$1,$2); $$->line=$1->line;}
         ;
+
 Def: Specifier DecList SEMI {$$=new NDef(*$1,$2); $$->line=$1->line;}
         ;
 
 DecList:  Dec  {$$=new NDecList(*$1,nullptr);$$->line=$1->line;}
         | Dec COMMA DecList  {$$=new NDecList(*$1,$3); $$->line=$1->line;}
         ;
+
 Dec:      VarDec  {$$=new NDec(*$1);$$->line=$1->line;}
         | VarDec ASSIGNOP Exp  {$$=new NDec(*$1,$3); $$->line=$1->line;}
         ;
+
 
 /*Expressions*/
 Exp:      Exp ASSIGNOP Exp {$$=new NAssignment(*(new std::string("ASSIGNOP")),*$1,ASSIGNOP,*$3);$$->line=yylineno;}//$$结点type_id空置未用，正好存放运算符
@@ -181,12 +200,10 @@ Exp:      Exp ASSIGNOP Exp {$$=new NAssignment(*(new std::string("ASSIGNOP")),*$
         | Exp MINUSASS Exp   {$$=new NAssignment(*(new std::string("MINUSASS")),*$1,MINUSASS,*$3);$$->line=yylineno;}
         | Exp STARASS Exp   {$$=new NAssignment(*(new std::string("STARASS")),*$1,STARASS,*$3);$$->line=yylineno;}
         | Exp DIVASS Exp   {$$=new NAssignment(*(new std::string("DIVASS")),*$1,DIVASS,*$3);$$->line=yylineno;}
-
         | PLUSPLUS Exp %prec UPLUSPLUS   {$$=new NSingleOperator(*(new std::string("PLUSPLUS-")),PLUSPLUS,*$2);$$->line=yylineno;}//这里利用BISON %prec表示和UMINUS同优先级
         | MINUSMINUS Exp %prec UMINUSMINUS   {$$=new NSingleOperator(*(new std::string("MINUSMINUS-")),MINUSMINUS,*$2);$$->line=yylineno;}//这里利用BISON %prec表示和UMINUS同优先级
         | Exp PLUSPLUS   {$$=new NSingleOperator(*(new std::string("-PLUSPLUS")),PLUSPLUS,*$1);$$->line=yylineno;}//这里利用BISON %prec表示和UMINUS同优先级
         | Exp MINUSMINUS  {$$=new NSingleOperator(*(new std::string("-MINUSMINUS")),MINUSMINUS,*$1);$$->line=yylineno;}//这里利用BISON %prec表示和UMINUS同优先级
-
         | Exp AND Exp   {$$=new NBinaryOperator(*(new std::string("AND")),*$1,AND,*$3);$$->line=yylineno;}
         | Exp OR Exp    {$$=new NBinaryOperator(*(new std::string("OR")),*$1,OR,*$3);$$->line=yylineno;}
         | Exp RELOP Exp {$$=new NBinaryOperator(*(new std::string("RELOP")),*$1,RELOP,*$3);$$->line=yylineno;}  //词法分析关系运算符号自身值保存在$2中
@@ -194,9 +211,7 @@ Exp:      Exp ASSIGNOP Exp {$$=new NAssignment(*(new std::string("ASSIGNOP")),*$
         | Exp MINUS Exp {$$=new NBinaryOperator(*(new std::string("MINUS")),*$1,MINUS,*$3);$$->line=yylineno;}
         | Exp STAR Exp  {$$=new NBinaryOperator(*(new std::string("STAR")),*$1,STAR,*$3);$$->line=yylineno;}
         | Exp DIV Exp   {$$=new NBinaryOperator(*(new std::string("DIV")),*$1,DIV,*$3);$$->line=yylineno;}
-        
         | Exp MOD Exp   {$$=new NBinaryOperator(*(new std::string("MOD")),*$1,MOD,*$3);$$->line=yylineno;}
-        
         | LP Exp RP     {$$=new NParenOperator(*$2);$$->line=yylineno;}
         | MINUS Exp %prec UMINUS   {$$=new NSingleOperator(*(new std::string("MINUS-")),MINUS,*$2);$$->line=yylineno;}//这里利用BISON %prec表示和UMINUS同优先级 相当于虚拟出一个运算符
         | NOT Exp       {$$=new NSingleOperator(*(new std::string("NOT-")),NOT,*$2);$$->line=yylineno;}
@@ -209,38 +224,12 @@ Exp:      Exp ASSIGNOP Exp {$$=new NAssignment(*(new std::string("ASSIGNOP")),*$
         | FLOAT         {$$=new NFloat($1);$$->line=yylineno;}
         | CHAR          {$$=new NChar($1);$$->line=yylineno;}
         ;
+
 Args:   Exp COMMA Args {$$=new NArgs(*$1,$3); $$->line=yylineno;}
         | Exp {$$=new NArgs(*$1,nullptr);$$->line=yylineno;}
         ;
 
 %%
-// int main(int argc, char *argv[]){
-// 	yyin=fopen(argv[1],"r");
-// 	if (!yyin) return 1;
-// 	yylineno=1;
-//         allptr=NULL;
-//         allerror=0;
-// 	yyparse();
-//         if(p) p->parse();
-//         if(!allerror)
-//         semanticanalysis(allptr,0);
-//         if(!allerror){
-//         //std::string temp=argv[1];
-//         //temp[temp.size()-1]='l';
-//         //temp+="l";
-//         //FILE *tt=freopen(temp.data(),"w",stdout);
-//         //codeGen(allptr,0);
-//         //fclose(tt);
-//         //toy_as(temp);
-//         //char argvv[2][10];
-//         //strcpy(argvv[0],"llc");
-//         //temp[temp.size()-2]='b';
-//         //temp[temp.size()-1]='c';
-//         //strcpy(argvv[1],temp.data());
-//         //toy_llc(2,(char **)argvv);
-//         }
-// 	return 0;
-// }
 
 #include<stdarg.h>
 void yyerror(const char* fmt, ...)

@@ -5,20 +5,43 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
-  %1 = alloca i32, align 4
-  %2 = alloca i32, align 4
-  store i32 0, i32* %1, align 4
-  store i32 1, i32* %2, align 4
-  store i32 72, i32* %2, align 4
-  %3 = load i32, i32* %2, align 4
-  %4 = call i32 @putchar(i32 %3)
-  ;begin
+    %1 = alloca i32, align 4
+    %2 = alloca i32, align 4
+    store i32 0, i32* %1, align 4     ;%1=0
+    store i32 1, i32* %2, align 4     ;%2=1
+    store i32 72, i32* %2, align 4    ;%2=72
+    %3 = load i32, i32* %2, align 4   ;%3=%2
+    %4 = call i32 @putchar(i32 %3)    ;putchar(%3=72)
+    ;begin
 
-  ;end
-  store i32 10, i32* %2, align 4
-  %17 = load i32, i32* %2, align 4
-  %18 = call i32 @putchar(i32 %17)
-  ret i32 0
+    store i32 85, i32* %2, align 4
+    %5 = load i32, i32* %2, align 4
+    %6 = call i32 @putchar(i32 %5)
+    
+    store i32 83, i32* %2, align 4
+    %7 = load i32, i32* %2, align 4
+    %8 = call i32 @putchar(i32 %7)
+
+    store i32 84, i32* %2, align 4
+    %9 = load i32, i32* %2, align 4
+    %10 = call i32 @putchar(i32 %9)
+
+    store i32 67, i32* %2, align 4
+    %11 = load i32, i32* %2, align 4
+    %12 = call i32 @putchar(i32 %11)
+
+    store i32 83, i32* %2, align 4
+    %13 = load i32, i32* %2, align 4
+    %14 = call i32 @putchar(i32 %13)
+
+    store i32 69, i32* %2, align 4
+    %15 = load i32, i32* %2, align 4
+    %16 = call i32 @putchar(i32 %15)
+    ;end
+    store i32 10, i32* %2, align 4
+    %17 = load i32, i32* %2, align 4
+    %18 = call i32 @putchar(i32 %17)
+    ret i32 0
 }
 
 declare dso_local i32 @putchar(i32) #1

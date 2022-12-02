@@ -10,8 +10,8 @@ ID [a-z][a-z0-9]*
 if|then|begin|end|procedure|function {printf( "A keyword: %s\n", yytext );}
 {ID} printf( "An identifier: %s\n", yytext );
 "+"|"-"|"*"|"/" printf( "An operator: %s\n", yytext );
-"{"[^}\n]*"}" 	/* eat up one-line comments */
-[ \t\n]+ 		/* eat up whitespace */
+"{"[^}\n]*"}"   /* eat up one-line comments */
+[ \t\n]+        /* eat up whitespace */
 .       printf( "Unrecognized character: %s\n", yytext );
 %%
 int main( argc, argv )
@@ -24,4 +24,4 @@ if ( argc > 0 )
 else
         yyin = stdin;
         yylex();
-}       
+}
