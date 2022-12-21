@@ -1,4 +1,7 @@
 #include "astnode.h"
+#include<map>
+#include<string>
+#include<list>
 
 extern int spaces;
 extern std::unique_ptr<LLVMContext> theContext;
@@ -10,6 +13,41 @@ extern int grammererror;
 extern std::map<std::string, AllocaInst *> curNamedValues;
 
 extern BasicBlock *continueBasicBlock;
+
+struct Var {
+  std::string vName;
+  AllocaInst *alloc;
+};
+std::list<Var*>vars;
+
+Var* search(std::string varName) {
+    std::list<Var*>::iterator it = vars.begin();
+    for(;it != vars.end();it++) 
+    {
+      if((*it)->vName == varName) 
+      {
+        return *it;
+      }
+    }
+    return NULL;
+}
+
+Var* searchInComp(std::string varName) {
+    std::list<Var*>::iterator it = vars.begin();
+    for(;it != vars.end();it++) 
+    {
+      if((*it)->vName == varName) 
+      {
+        return *it;
+      }
+      if((*it)->vName == "") 
+      {
+        return NULL;
+      }
+    }
+    return NULL;
+}
+
 void printspaces() {
   for (int i = 0; i < spaces; ++i)
     std::cout << " ";
@@ -67,6 +105,7 @@ Function *getFunction(std::string Name) {
   // First, see if the function has already been added to the current module.
   if (auto *F = theModule->getFunction(Name))
     return F;
+  return nullptr;
 }
 
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block
@@ -557,52 +596,173 @@ Value *NInteger::codegen() {
 Value *NFloat::codegen() {
   // begin
 
-  return nullptr;
+  return ConstantFP::get(*theContext,APFloat(value));
   // end
 }
 Value *NChar::codegen() {
   // begin
 
-  return nullptr;
+  return ConstantInt::get(*theContext,APInt(8,value,false));
   // end
 }
 Value *NIdentifier::codegen() {
   // begin
-
-  return nullptr;
+  Var *v = search(name);
+  if(v)
+  {
+    return builder->CreateLoad(v->alloc->getAllocatedType(),v->alloc); 
+  }
+  printSemanticError(1,line);
+  exit(0);
   // end
 }
 Value *NArgs::codegen() { return exp.codegen(); }
 Value *NMethodCall::codegen() {
   // begin
-
-  return nullptr;
+  Function *func = theModule->getFunction(id.name);
+  //函数在调用时未经定义
+  if(!func) 
+  {
+      printSemanticError(2,line);
+      exit(0);
+  }
+  std::vector<Value *> argsV;
+  NArgs *arg = nargs;
+  for(auto &Farg : func->args()) 
+  {
+      //参数数目不足
+      if(!arg) 
+      {
+        printSemanticError(8,line);
+        exit(0);
+      }
+      Type *t = Farg.getType();
+      Value *v = arg->codegen();
+      //参数类型不匹配
+      if (t != v->getType()) 
+      {
+        printSemanticError(8,line);
+        exit(0);
+      }
+      //压入参数
+      argsV.push_back(v);
+      //继续向后取参检测
+      arg = arg->nArgs;
+   }
+   if(arg) 
+   {
+      printSemanticError(8,line);
+      exit(0);
+   } 
+  return builder->CreateCall(func,argsV);
   // end
 }
 Value *NParenOperator::codegen() { return exp.codegen(); }
 Value *NSingleOperator::codegen() {
   // begin
-
-  return nullptr;
+  Value * v = hs.codegen();
+  if(op==282)
+    return builder->CreateNot(v);
+  else if(op==275)
+    return builder->CreateNeg(v);
+  else
+    return nullptr;
   // end
 }
 Value *NBinaryOperator::codegen() {
   // begin
-
+  Value *l,*r;
+  l = lhs.codegen();
+  r = rhs.codegen();
+  std::string relop;
+  if(op == 260)
+    relop = name.substr(5,2);
+  switch (op)
+  {
+  case 260:     
+    if(relop == "<=") 
+    {
+        return builder->CreateICmpULE(l,r);
+    } 
+    else if(relop == "==") 
+    {
+        return builder->CreateICmpEQ(l,r);
+    } 
+    else if(relop == "!=") 
+    {
+        return builder->CreateICmpNE(l,r);
+    } 
+    else if(relop == ">") 
+    { 
+        return builder->CreateICmpSGT(l,r);
+    } 
+    else if(relop == "<") 
+    {
+        return builder->CreateICmpSLT(l,r);
+    } 
+    else if(relop == ">=") 
+    {
+        return builder->CreateICmpSGE(l,r);
+    }
+  case 280:  
+      return builder->CreateAnd(l,r);
+  case 281:  
+      return builder->CreateOr(l,r);
+  case 274:
+      return builder->CreateAdd(l,r);
+  case 275:
+      return builder->CreateSub(l,r);
+  case 276:
+      return builder->CreateMul(l,r);
+  case 277:
+      return builder->CreateSDiv(l,r);
+  default:
+    break;
+  }
   return nullptr;
   // end
 }
 Value *NAssignment::codegen() {
   // Assignment requires the LHS to be an identifier.
   // begin
-
-  return nullptr;
+  Var *v;
+  Value *rv;
+  rv = rhs.codegen(); 
+  if (lhs.name == "") 
+  {
+    //赋值号左边出现一个只有右值的表达式
+    printSemanticError(6,line); 
+    exit(0);
+  } 
+  else 
+  {
+    v = search(lhs.name);
+    if(!v) 
+    {
+      printSemanticError(1,line);  
+      exit(0);
+    }
+    if(v->alloc->getAllocatedType() != rv->getType()) 
+    {
+      //赋值号两边的表达式类型不匹配
+      printSemanticError(5,line);
+      exit(0);
+    }
+  }
+  return builder->CreateStore(rv,v->alloc);
   // end
 }
 Value *NSpecifier::codegen() {
   // begin
-
-  return nullptr;
+   if(type=="int")
+   return ConstantInt::get(*theContext,APInt(32,0,true));
+   if(type=="float")
+   return ConstantFP::get(*theContext,APFloat(0.0));
+   if(type=="char")
+   return ConstantInt::get(*theContext,APInt(8,0,false));
+  assert(false);
+   
+  return ConstantInt::get(*theContext,APInt(32,0,true));
   // end
 }
 Type *NSpecifier::getType() {
@@ -664,13 +824,38 @@ Function *NFunDec::funcodegen(Type *retType) {
 }
 Value *NDef::codegen() {
   // begin
+  Type *s = nSpecifier.getType();
+  if(nDecList != nullptr) 
+  {
+    NDecList *d = nDecList;
+    for(;d != nullptr;d = d->nDecList) 
+    {
+      if(searchInComp(d->dec.vardec.Id.name) != nullptr) 
+      {
+          printSemanticError(3,line);
+          exit(0);
+      }
+      AllocaInst *alloca_tmp = builder->CreateAlloca(s,nullptr,d->dec.vardec.Id.name );
 
+      if(d->dec.exp != nullptr) 
+      {
+          Value *v = d->dec.exp->codegen();
+          builder->CreateStore(v,alloca_tmp);
+      } 
+      Var *var = new Var;
+      var->vName = d->dec.vardec.Id.name;
+      var->alloc = alloca_tmp;
+      vars.push_front(var);
+    } 
+  } 
   return nullptr;
   // end
 }
 Value *NDefList::codegen() {
   // begin
-
+  nDef.codegen();
+  if(nDefList != nullptr) 
+     nDefList->codegen();
   return nullptr;
   // end
 }
@@ -682,6 +867,13 @@ Value *NStmtList::codegen() {
 }
 Value *NCompSt::codegen() {
   // 自行处理变量作用域的问题
+  Var *var = new Var;
+  if(var == nullptr) {
+      printf("malloc error\n");
+      exit(0);
+  }
+  var->alloc = nullptr;
+  vars.push_front(var);
   Value *retVal = nullptr;
   if (ndeflist)
     retVal = ndeflist->codegen();
@@ -693,7 +885,7 @@ Value *NExpStmt::codegen() { return exp.codegen(); }
 Value *NCompStStmt::codegen() {
   // begin
 
-  return nullptr;
+  return compst.codegen();
   // end
 }
 Value *NRetutnStmt::codegen() {
@@ -704,7 +896,12 @@ Value *NRetutnStmt::codegen() {
   auto *retVal = exp.codegen();
   // check the return type and fundec type
   // begin
-
+  Type *t = theFun->getReturnType();
+  if(t != retVal->getType()) 
+  {
+    printSemanticError(7,line);
+    exit(0);
+  }
   // end
     builder->CreateRet(retVal);
   return retVal;
@@ -712,14 +909,40 @@ Value *NRetutnStmt::codegen() {
 Value *NIfStmt::codegen() {
   Function *theFun = builder->GetInsertBlock()->getParent();
   // begin
-
+  BasicBlock *thenb = BasicBlock::Create(*theContext,"ifthen",theFun); 
+  BasicBlock *ifnotb = BasicBlock::Create(*theContext,"ifnot"); 
+  builder->CreateCondBr(exp.codegen(),thenb,ifnotb);
+  builder->SetInsertPoint(thenb);
+  if(stmt.codegen() == nullptr) 
+  {
+    builder->CreateBr(ifnotb);
+  } 
+  theFun->getBasicBlockList().push_back(ifnotb);
+  builder->SetInsertPoint(ifnotb);
+  
   return nullptr;
   // end
 }
 Value *NIfElseStmt::codegen() {
   Function *theFun = builder->GetInsertBlock()->getParent();
   // begin
-
+  BasicBlock *thenb = BasicBlock::Create(*theContext, "ifthen", theFun); 
+  BasicBlock *ifnotb = BasicBlock::Create(*theContext,"ifnot"); 
+  BasicBlock *after = BasicBlock::Create(*theContext,"ifafter"); 
+  builder->CreateCondBr(exp.codegen(),thenb,ifnotb);
+  builder->SetInsertPoint(thenb);
+  if(stmt.codegen() == nullptr) 
+  {
+    builder->CreateBr(after);
+  }
+  theFun->getBasicBlockList().push_back(ifnotb);
+  builder->SetInsertPoint(ifnotb);
+  if(stmt_else.codegen() == nullptr) 
+  {
+    builder->CreateBr(after);
+  }
+  theFun->getBasicBlockList().push_back(after);
+  builder->SetInsertPoint(after);
   return nullptr;
   // end
 }
@@ -727,7 +950,19 @@ Value *NWhileStmt::codegen() {
   Function *theFun = builder->GetInsertBlock()->getParent();
   BasicBlock *condb = BasicBlock::Create(*theContext, "cond", theFun);
   // begin
-
+  builder->CreateBr(condb);
+  BasicBlock *rundb = BasicBlock::Create(*theContext, "zmy");
+  BasicBlock *after = BasicBlock::Create(*theContext, "zmy2");
+  builder->SetInsertPoint(condb);
+  builder->CreateCondBr(exp.codegen(),rundb,after);
+  theFun->getBasicBlockList().push_back(rundb);
+  builder->SetInsertPoint(rundb);  
+  if(stmt.codegen() == nullptr) 
+  {
+     builder->CreateBr(condb);
+  }
+  theFun->getBasicBlockList().push_back(after);
+  builder->SetInsertPoint(after);  
   return nullptr;
   // end
 }
@@ -754,6 +989,18 @@ Value *NExtDefFunDec::codegen() {
   BasicBlock *bb = BasicBlock::Create(*theContext, "entry", f);
   builder->SetInsertPoint(bb);
   namedValues.clear();
+    curNamedValues.clear();
+  for(std::list<Var*>::iterator it = vars.begin();it != vars.end();) {
+    Var *var_tmp = *it;
+    std::string tname = var_tmp->vName;
+    it++;
+    vars.pop_front();
+
+    delete var_tmp;
+    if(tname == "") {
+      break;
+    }
+  }
   for (auto &arg : f->args()) {
     // Create an alloca for this variable.
     AllocaInst *alloca =
@@ -768,6 +1015,11 @@ Value *NExtDefFunDec::codegen() {
     // Add arguments to variable symbol table.
     namedValues[std::string(arg.getName())] = alloca;
     curNamedValues[std::string(arg.getName())] = alloca;
+    
+    Var *var = new Var;
+    var->vName = std::string(arg.getName());
+    var->alloc = alloca;
+    vars.push_front(var);
   }
   if (Value *retVal = compst->codegen()) {
     // Finish off the function.
@@ -817,3 +1069,4 @@ Value *NProgram::codegen() {
     return nullptr;
   return lastCode;
 }
+

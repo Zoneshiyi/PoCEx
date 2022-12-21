@@ -751,8 +751,15 @@ Value *NAssignment::codegen() {
 }
 Value *NSpecifier::codegen() {
   // begin
-
-  return nullptr;
+   if(type=="int")
+   return ConstantInt::get(*theContext,APInt(32,0,true));
+   if(type=="float")
+   return ConstantFP::get(*theContext,APFloat(0.0));
+   if(type=="char")
+   return ConstantInt::get(*theContext,APInt(8,0,false));
+  assert(false);
+   
+  return ConstantInt::get(*theContext,APInt(32,0,true));
   // end
 }
 Type *NSpecifier::getType() {
